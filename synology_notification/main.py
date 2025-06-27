@@ -11,14 +11,13 @@ from pathlib import Path
 
 from flask import Flask, request
 
-from ._verify import verify_api, verify_headers, SupportedAPIProviders
+from ._verify import verify_api_with_required_headers, SupportedAPIProviders
 
 app = Flask(__name__)
 
 
-@verify_headers
-@verify_api
 @app.route('/', methods=["POST", "GET"])
+@verify_api_with_required_headers
 def root():
     """
     Webhook root entrance

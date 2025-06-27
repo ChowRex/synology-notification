@@ -1,4 +1,7 @@
 # synology-notification
+
+[![codecov](https://codecov.io/gh/ChowRex/synology-notification/graph/badge.svg?token=DK06DH99KO)](https://codecov.io/gh/ChowRex/synology-notification)
+
 Synology DSM notification webhook, work with Synology Web Station.
 
 ## How to use

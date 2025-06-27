@@ -9,15 +9,14 @@ Verify the requests headers module
 """
 __all__ = [
     "SupportedAPIProviders",
-    "verify_headers",
-    "verify_api",
+    "verify_api_with_required_headers",
 ]
 
 from enum import Enum
 from functools import wraps
 from typing import Callable
 
-from flask import request, current_app
+from flask import request, current_app, abort
 
 from .api import AbstractServiceProvider
 from .api import WecomGroupBotSender
@@ -48,61 +47,43 @@ class SupportedAPIProviders(Enum):
         providers = cls._all_providers()
         if not provider:
             msg = "Must provide a provider name"
-            raise ValueError(msg)
+            abort(400, description=msg)
         if provider not in providers:
             msg = f"Unsupported API provider: {provider}"
             current_app.logger.critical(msg)
-            raise ValueError(msg)
+            abort(406, description=msg)
         instance = providers[provider]()
         return instance
 
 
-def verify_api(function: Callable):
+def verify_api_with_required_headers(function: Callable):
     """
-    Decorator to verify and convert api string to instance
+    Decorator to verify api string and required headers
     :param function: Function to decorate
     :return:
     """
 
     @wraps(function)
-    def wrapper(*args, **kwargs):
-        if request.method != "POST":
-            return function(*args, **kwargs)
-        api = request.args.get("api", "")
-        current_app.logger.debug("Specify API: %s", api)
-        api_provider = SupportedAPIProviders.get_provider(api)
-        current_app.logger.debug("Converted API provider: %s", api_provider)
-        kwargs["api"] = api_provider
-        return function(*args, **kwargs)
-
-    return wrapper
-
-
-def verify_headers(function: Callable):
-    """
-    Decorator to verify request headers
-    :param function: Function to decorate
-    :return:
-    """
-
-    @wraps
-    def wrapper(*args, **kwargs) -> Callable:
+    def wrapper():
         """
-        Check request headers
-        :param args: Positional arguments
-        :param kwargs: Keyword arguments
+        Check api string and required headers
         :return:
         """
         if request.method != "POST":
-            return function(*args, **kwargs)
+            return function()
+        # Check API validation.
+        api = request.args.get("api", "")
+        current_app.logger.debug("Specify API: %s", api)
+        provider = SupportedAPIProviders.get_provider(api)
+        current_app.logger.debug("Converted API provider: %s", provider)
+        # Check required header keys
         headers = request.headers
-        provider = kwargs["api"]
         assert isinstance(provider, AbstractServiceProvider)
         for required in provider.required_header_keys():
             if required not in headers:
                 msg = f"Missing required header key: {required}"
                 current_app.logger.critical(msg)
-                raise ValueError(msg)
-        return function(*args, **kwargs)
+                abort(400, description=msg)
+        return function()
 
     return wrapper
