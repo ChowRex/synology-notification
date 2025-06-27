@@ -39,7 +39,7 @@ jobs:
           platforms: linux/amd64,linux/arm64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:latest,${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKERHUB_REPO_NAME }}:${{env.VERSION}}
+            ${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:latest,${{ secrets.DOCKER_USERNAME }}/${{ github.event.repository.name }}:${{env.VERSION}}
 
       - name: Log out from Docker Hub
         run: docker logout
